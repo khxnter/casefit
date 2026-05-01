@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CaseFit — PC Case Compatibility Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00e5ff;
+    --accent2: #ff3d71;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --green: #00ff9d;
+    --card-bg: #13131e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 48px 32px 32px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,229,255,0.05) 0%, transparent 100%);
+  }
+
+  .logo-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 96px);
+    letter-spacing: 4px;
+    line-height: 0.9;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 60%, #00aacc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 1px;
+  }
+
+  /* Selector section */
+  .selector-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 48px auto;
+    padding: 0 24px;
+  }
+
+  .selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .selector-grid { grid-template-columns: 1fr; }
+  }
+
+  .select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .select-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .select-wrapper::after {
+    content: '▾';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    pointer-events: none;
+    font-size: 14px;
+  }
+
+  select {
+    width: 100%;
+    padding: 14px 44px 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+  }
+
+  select option {
+    background: #1a1a24;
+    color: var(--text);
+    padding: 8px;
+  }
+
+  /* Status badge */
+  #status-bar {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 24px;
+    display: none;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease;
+  }
+
+  .status-badge.compatible {
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.3);
+    color: var(--green);
+  }
+
+  .status-badge.incompatible {
+    background: rgba(255,61,113,0.08);
+    border: 1px solid rgba(255,61,113,0.3);
+    color: var(--accent2);
+  }
+
+  .status-icon { font-size: 18px; }
+
+  /* Results section */
+  #results {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto 80px;
+    padding: 0 24px;
+  }
+
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .results-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .results-count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .case-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.4s ease both;
+    cursor: default;
+  }
+
+  .case-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0,229,255,0.35);
+    box-shadow: 0 12px 40px rgba(0,229,255,0.08);
+  }
+
+  .case-img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .case-body {
+    padding: 18px;
+  }
+
+  .case-brand {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .case-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .case-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-form { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.2); }
+  .tag-gpu { background: rgba(255,61,113,0.1); color: #ff7a9a; border: 1px solid rgba(255,61,113,0.2); }
+  .tag-size { background: rgba(255,200,0,0.1); color: #ffd040; border: 1px solid rgba(255,200,0,0.2); }
+  .tag-type { background: rgba(0,255,157,0.1); color: var(--green); border: 1px solid rgba(0,255,157,0.2); }
+
+  .case-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 4px;
+  }
+
+  .spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .spec-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .spec-val { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .amazon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 16px;
+    background: #ff9900;
+    color: #111;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .amazon-btn:hover { background: #ffad33; transform: translateY(-1px); }
+  .amazon-btn svg { flex-shrink: 0; }
+
+  .priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(255,153,0,0.12);
+    border: 1px solid rgba(255,153,0,0.3);
+    color: #ffad33;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Empty / placeholder */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--muted);
+  }
+
+  .empty-state .big-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.4; }
+  .empty-state h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* stagger cards */
+  .case-card:nth-child(1) { animation-delay: 0.05s; }
+  .case-card:nth-child(2) { animation-delay: 0.1s; }
+  .case-card:nth-child(3) { animation-delay: 0.15s; }
+  .case-card:nth-child(4) { animation-delay: 0.2s; }
+  .case-card:nth-child(5) { animation-delay: 0.25s; }
+  .case-card:nth-child(6) { animation-delay: 0.3s; }
+  .case-card:nth-child(7) { animation-delay: 0.35s; }
+  .case-card:nth-child(8) { animation-delay: 0.4s; }
+  .case-card:nth-child(9) { animation-delay: 0.45s; }
+  .case-card:nth-child(10) { animation-delay: 0.5s; }
+
+  footer {
+    position: relative; z-index:1;
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-tag">⚡ PC Build Tool</div>
+  <h1>CASEFIT</h1>
+  <p class="tagline">Find the perfect case for your GPU & motherboard combination</p>
+</header>
+
+<div class="selector-wrap">
+  <div class="selector-grid">
+    <div class="select-group">
+      <label class="select-label" for="gpu-select">Graphics Card</label>
+      <div class="select-wrapper">
+        <select id="gpu-select">
+          <option value="">— Choose a GPU —</option>
+        </select>
+      </div>
+    </div>
+    <div class="select-group">
+      <label class="select-label" for="mb-select">Motherboard</label>
+      <div class="select-wrapper">
+        <select id="mb-select">
+          <option value="">— Choose a Motherboard —</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar"></div>
+
+<div id="results">
+  <div class="empty-state">
+    <div class="big-icon">🖥️</div>
+    <h3>Select Your Components</h3>
+    <p>Choose a GPU and motherboard above to find compatible cases.<br>We'll check compatibility and show you the best fits.</p>
+  </div>
+</div>
+
+<footer>CASEFIT — Compatibility data is approximate. Always verify with manufacturer specs.</footer>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+// GPU: { id, name, brand, length_mm, slot_width, pcieGen, minPSU }
+const GPUS = [
+  // NVIDIA RTX 50 series
+  { id:'5090', name:'GeForce RTX 5090', brand:'NVIDIA', length:336, slots:3.5, pcieGen:5, minPSU:1000 },
+  { id:'5080', name:'GeForce RTX 5080', brand:'NVIDIA', length:320, slots:3.5, pcieGen:5, minPSU:850 },
+  { id:'5070ti', name:'GeForce RTX 5070 Ti', brand:'NVIDIA', length:310, slots:3, pcieGen:5, minPSU:750 },
+  { id:'5070', name:'GeForce RTX 5070', brand:'NVIDIA', length:285, slots:2.5, pcieGen:5, minPSU:650 },
+  { id:'5060ti', name:'GeForce RTX 5060 Ti', brand:'NVIDIA', length:250, slots:2, pcieGen:5, minPSU:550 },
+  { id:'5060', name:'GeForce RTX 5060', brand:'NVIDIA', length:240, slots:2, pcieGen:5, minPSU:500 },
+  // NVIDIA RTX 40 series
+  { id:'4090', name:'GeForce RTX 4090', brand:'NVIDIA', length:336, slots:3.5, pcieGen:4, minPSU:850 },
+  { id:'4080super', name:'GeForce RTX 4080 Super', brand:'NVIDIA', length:320, slots:3.5, pcieGen:4, minPSU:750 },
+  { id:'4080', name:'GeForce RTX 4080', brand:'NVIDIA', length:310, slots:3.5, pcieGen:4, minPSU:700 },
+  { id:'4070tisuper', name:'GeForce RTX 4070 Ti Super', brand:'NVIDIA', length:305, slots:3, pcieGen:4, minPSU:700 },
+  { id:'4070ti', name:'GeForce RTX 4070 Ti', brand:'NVIDIA', length:299, slots:3, pcieGen:4, minPSU:650 },
+  { id:'4070super', name:'GeForce RTX 4070 Super', brand:'NVIDIA', length:285, slots:3, pcieGen:4, minPSU:650 },
+  { id:'4070', name:'GeForce RTX 4070', brand:'NVIDIA', length:244, slots:2.5, pcieGen:4, minPSU:600 },
+  { id:'4060ti', name:'GeForce RTX 4060 Ti', brand:'NVIDIA', length:240, slots:2.5, pcieGen:4, minPSU:550 },
+  { id:'4060', name:'GeForce RTX 4060', brand:'NVIDIA', length:240, slots:2, pcieGen:4, minPSU:450 },
+  // NVIDIA RTX 30 series
+  { id:'3090ti', name:'GeForce RTX 3090 Ti', brand:'NVIDIA', length:336, slots:3.5, pcieGen:4, minPSU:850 },
+  { id:'3090', name:'GeForce RTX 3090', brand:'NVIDIA', length:336, slots:3.5, pcieGen:4, minPSU:750 },
+  { id:'3080ti', name:'GeForce RTX 3080 Ti', brand:'NVIDIA', length:320, slots:3, pcieGen:4, minPSU:750 },
+  { id:'3080', name:'GeForce RTX 3080', brand:'NVIDIA', length:320, slots:3, pcieGen:4, minPSU:750 },
+  { id:'3070ti', name:'GeForce RTX 3070 Ti', brand:'NVIDIA', length:290, slots:3, pcieGen:4, minPSU:700 },
+  { id:'3070', name:'GeForce RTX 3070', brand:'NVIDIA', length:242, slots:2.5, pcieGen:4, minPSU:650 },
+  { id:'3060ti', name:'GeForce RTX 3060 Ti', brand:'NVIDIA', length:242, slots:2.5, pcieGen:4, minPSU:600 },
+  { id:'3060', name:'GeForce RTX 3060', brand:'NVIDIA', length:242, slots:2, pcieGen:4, minPSU:550 },
+  { id:'3050', name:'GeForce RTX 3050', brand:'NVIDIA', length:200, slots:2, pcieGen:4, minPSU:450 },
+  // AMD RX 9000 series
+  { id:'9070xt', name:'Radeon RX 9070 XT', brand:'AMD', length:322, slots:2.5, pcieGen:5, minPSU:700 },
+  { id:'9070', name:'Radeon RX 9070', brand:'AMD', length:302, slots:2.5, pcieGen:5, minPSU:650 },
+  // AMD RX 7000 series
+  { id:'7900xtx', name:'Radeon RX 7900 XTX', brand:'AMD', length:287, slots:3, pcieGen:4, minPSU:800 },
+  { id:'7900xt', name:'Radeon RX 7900 XT', brand:'AMD', length:276, slots:3, pcieGen:4, minPSU:750 },
+  { id:'7900gre', name:'Radeon RX 7900 GRE', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:700 },
+  { id:'7800xt', name:'Radeon RX 7800 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:650 },
+  { id:'7700xt', name:'Radeon RX 7700 XT', brand:'AMD', length:254, slots:2.5, pcieGen:4, minPSU:600 },
+  { id:'7600xt', name:'Radeon RX 7600 XT', brand:'AMD', length:236, slots:2, pcieGen:4, minPSU:550 },
+  { id:'7600', name:'Radeon RX 7600', brand:'AMD', length:200, slots:2, pcieGen:4, minPSU:500 },
+  // AMD RX 6000 series
+  { id:'6950xt', name:'Radeon RX 6950 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:750 },
+  { id:'6900xt', name:'Radeon RX 6900 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:750 },
+  { id:'6800xt', name:'Radeon RX 6800 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:650 },
+  { id:'6800', name:'Radeon RX 6800', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:650 },
+  { id:'6750xt', name:'Radeon RX 6750 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:650 },
+  { id:'6700xt', name:'Radeon RX 6700 XT', brand:'AMD', length:267, slots:2.5, pcieGen:4, minPSU:600 },
+  { id:'6650xt', name:'Radeon RX 6650 XT', brand:'AMD', length:210, slots:2, pcieGen:4, minPSU:550 },
+  { id:'6600xt', name:'Radeon RX 6600 XT', brand:'AMD', length:190, slots:2, pcieGen:4, minPSU:500 },
+  { id:'6600', name:'Radeon RX 6600', brand:'AMD', length:190, slots:2, pcieGen:4, minPSU:500 },
+  // Intel Arc
+  { id:'a770', name:'Arc A770', brand:'Intel', length:267, slots:2, pcieGen:4, minPSU:600 },
+  { id:'a750', name:'Arc A750', brand:'Intel', length:267, slots:2, pcieGen:4, minPSU:550 },
+  { id:'b580', name:'Arc B580', brand:'Intel', length:240, slots:2, pcieGen:4, minPSU:550 },
+  { id:'b570', name:'Arc B570', brand:'Intel', length:200, slots:2, pcieGen:4, minPSU:500 },
+  // Budget / older
+  { id:'1660super', name:'GeForce GTX 1660 Super', brand:'NVIDIA', length:229, slots:2, pcieGen:3, minPSU:450 },
+  { id:'1660ti', name:'GeForce GTX 1660 Ti', brand:'NVIDIA', length:229, slots:2, pcieGen:3, minPSU:450 },
+  { id:'1660', name:'GeForce GTX 1660', brand:'NVIDIA', length:229, slots:2, pcieGen:3, minPSU:430 },
+  { id:'1650super', name:'GeForce GTX 1650 Super', brand:'NVIDIA', length:229, slots:2, pcieGen:3, minPSU:400 },
+  { id:'1650', name:'GeForce GTX 1650', brand:'NVIDIA', length:151, slots:2, pcieGen:3, minPSU:350 },
+  { id:'6500xt', name:'Radeon RX 6500 XT', brand:'AMD', length:135, slots:2, pcieGen:4, minPSU:400 },
+  { id:'6400', name:'Radeon RX 6400', brand:'AMD', length:152, slots:2, pcieGen:4, minPSU:350 },
+];
+
+// Motherboard form factors
+// formFactor: eatx|atx|matx|mitx|dtx
+// socket: am5|am4|lga1700|lga1851|lga1200
+// pcieGen: max gen of primary slot
+const MOTHERBOARDS = [
+  // AM5 – ATX
+  { id:'x870e-atx', name:'X870E (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'X870E' },
+  { id:'x870-atx', name:'X870 (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'X870' },
+  { id:'b850-atx', name:'B850 (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'B850' },
+  { id:'x670e-atx', name:'X670E (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'X670E' },
+  { id:'x670-atx', name:'X670 (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'X670' },
+  { id:'b650e-atx', name:'B650E (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:5, chipset:'B650E' },
+  { id:'b650-atx', name:'B650 (ATX)', brand:'AMD', form:'atx', socket:'AM5', pcieGen:4, chipset:'B650' },
+  // AM5 – mATX
+  { id:'x870e-matx', name:'X870E (mATX)', brand:'AMD', form:'matx', socket:'AM5', pcieGen:5, chipset:'X870E' },
+  { id:'b650-matx', name:'B650 (mATX)', brand:'AMD', form:'matx', socket:'AM5', pcieGen:4, chipset:'B650' },
+  { id:'b850-matx', name:'B850 (mATX)', brand:'AMD', form:'matx', socket:'AM5', pcieGen:5, chipset:'B850' },
+  { id:'a620-matx', name:'A620 (mATX)', brand:'AMD', form:'matx', socket:'AM5', pcieGen:4, chipset:'A620' },
+  // AM5 – mITX
+  { id:'x670e-mitx', name:'X670E (Mini-ITX)', brand:'AMD', form:'mitx', socket:'AM5', pcieGen:5, chipset:'X670E' },
+  { id:'b650-mitx', name:'B650 (Mini-ITX)', brand:'AMD', form:'mitx', socket:'AM5', pcieGen:4, chipset:'B650' },
+  // AM4 – ATX
+  { id:'x570-atx', name:'X570 (ATX)', brand:'AMD', form:'atx', socket:'AM4', pcieGen:4, chipset:'X570' },
+  { id:'b550-atx', name:'B550 (ATX)', brand:'AMD', form:'atx', socket:'AM4', pcieGen:4, chipset:'B550' },
+  { id:'x470-atx', name:'X470 (ATX)', brand:'AMD', form:'atx', socket:'AM4', pcieGen:3, chipset:'X470' },
+  { id:'b450-atx', name:'B450 (ATX)', brand:'AMD', form:'atx', socket:'AM4', pcieGen:3, chipset:'B450' },
+  // AM4 – mATX
+  { id:'b550m-matx', name:'B550M (mATX)', brand:'AMD', form:'matx', socket:'AM4', pcieGen:4, chipset:'B550' },
+  { id:'b450m-matx', name:'B450M (mATX)', brand:'AMD', form:'matx', socket:'AM4', pcieGen:3, chipset:'B450' },
+  { id:'a520m-matx', name:'A520M (mATX)', brand:'AMD', form:'matx', socket:'AM4', pcieGen:3, chipset:'A520' },
+  // AM4 – mITX
+  { id:'b550i-mitx', name:'B550I (Mini-ITX)', brand:'AMD', form:'mitx', socket:'AM4', pcieGen:4, chipset:'B550' },
+  { id:'x570i-mitx', name:'X570I (Mini-ITX)', brand:'AMD', form:'mitx', socket:'AM4', pcieGen:4, chipset:'X570' },
+  // Intel LGA1851 (Arrow Lake / Core Ultra 200)
+  { id:'z890-atx', name:'Z890 (ATX)', brand:'Intel', form:'atx', socket:'LGA1851', pcieGen:5, chipset:'Z890' },
+  { id:'b860-atx', name:'B860 (ATX)', brand:'Intel', form:'atx', socket:'LGA1851', pcieGen:5, chipset:'B860' },
+  { id:'h810-atx', name:'H810 (ATX)', brand:'Intel', form:'atx', socket:'LGA1851', pcieGen:4, chipset:'H810' },
+  { id:'z890-matx', name:'Z890 (mATX)', brand:'Intel', form:'matx', socket:'LGA1851', pcieGen:5, chipset:'Z890' },
+  { id:'b860-matx', name:'B860 (mATX)', brand:'Intel', form:'matx', socket:'LGA1851', pcieGen:5, chipset:'B860' },
+  { id:'z890-mitx', name:'Z890 (Mini-ITX)', brand:'Intel', form:'mitx', socket:'LGA1851', pcieGen:5, chipset:'Z890' },
+  { id:'b860-mitx', name:'B860 (Mini-ITX)', brand:'Intel', form:'mitx', socket:'LGA1851', pcieGen:5, chipset:'B860' },
+  // Intel LGA1700 (Alder/Raptor Lake)
+  { id:'z790-atx', name:'Z790 (ATX)', brand:'Intel', form:'atx', socket:'LGA1700', pcieGen:5, chipset:'Z790' },
+  { id:'z690-atx', name:'Z690 (ATX)', brand:'Intel', form:'atx', socket:'LGA1700', pcieGen:5, chipset:'Z690' },
+  { id:'b760-atx', name:'B760 (ATX)', brand:'Intel', form:'atx', socket:'LGA1700', pcieGen:4, chipset:'B760' },
+  { id:'h770-atx', name:'H770 (ATX)', brand:'Intel', form:'atx', socket:'LGA1700', pcieGen:4, chipset:'H770' },
+  { id:'z790-matx', name:'Z790 (mATX)', brand:'Intel', form:'matx', socket:'LGA1700', pcieGen:5, chipset:'Z790' },
+  { id:'b760m-matx', name:'B760M (mATX)', brand:'Intel', form:'matx', socket:'LGA1700', pcieGen:4, chipset:'B760' },
+  { id:'h610m-matx', name:'H610M (mATX)', brand:'Intel', form:'matx', socket:'LGA1700', pcieGen:3, chipset:'H610' },
+  { id:'z790-mitx', name:'Z790 (Mini-ITX)', brand:'Intel', form:'mitx', socket:'LGA1700', pcieGen:5, chipset:'Z790' },
+  { id:'b760i-mitx', name:'B760I (Mini-ITX)', brand:'Intel', form:'mitx', socket:'LGA1700', pcieGen:4, chipset:'B760' },
+  // Intel LGA1200 (Comet/Rocket Lake)
+  { id:'z590-atx', name:'Z590 (ATX)', brand:'Intel', form:'atx', socket:'LGA1200', pcieGen:4, chipset:'Z590' },
+  { id:'b560-atx', name:'B560 (ATX)', brand:'Intel', form:'atx', socket:'LGA1200', pcieGen:4, chipset:'B560' },
+  { id:'h510-matx', name:'H510M (mATX)', brand:'Intel', form:'matx', socket:'LGA1200', pcieGen:3, chipset:'H510' },
+  { id:'b560m-matx', name:'B560M (mATX)', brand:'Intel', form:'matx', socket:'LGA1200', pcieGen:4, chipset:'B560' },
+  { id:'z590-mitx', name:'Z590 (Mini-ITX)', brand:'Intel', form:'mitx', socket:'LGA1200', pcieGen:4, chipset:'Z590' },
+  // E-ATX
+  { id:'x870e-eatx', name:'X870E (E-ATX)', brand:'AMD', form:'eatx', socket:'AM5', pcieGen:5, chipset:'X870E' },
+  { id:'z890-eatx', name:'Z890 (E-ATX)', brand:'Intel', form:'eatx', socket:'LGA1851', pcieGen:5, chipset:'Z890' },
+  { id:'z790-eatx', name:'Z790 (E-ATX)', brand:'Intel', form:'eatx', socket:'LGA1700', pcieGen:5, chipset:'Z790' },
+  { id:'x670e-eatx', name:'X670E (E-ATX)', brand:'AMD', form:'eatx', socket:'AM5', pcieGen:5, chipset:'X670E' },
+  // DTX (rare but real)
+  { id:'b650-dtx', name:'B650 (DTX)', brand:'AMD', form:'dtx', socket:'AM5', pcieGen:4, chipset:'B650' },
+];
+
+// Priority brand order for sorting
+const BRAND_PRIORITY = ['Corsair','NZXT','Lian Li','MSI','Fractal Design','be quiet!','Cooler Master','Phanteks','Thermaltake','ASUS ROG','DeepCool','Antec','Silverstone'];
+
+// Cases: amazonUrl is a placeholder — replace with your affiliate link
+const CASES = [
+  // ── CORSAIR ──────────────────────────────────────────────────────────────
+  { id:'c-5000d',      name:'5000D Airflow',         brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:420, type:'Mid Tower',   dims:'520×245×464mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+5000D+Airflow' },
+  { id:'c-5000x',      name:'5000X RGB',              brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:420, type:'Mid Tower',   dims:'520×245×464mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+5000X+RGB' },
+  { id:'c-4000d',      name:'4000D Airflow',          brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'453×230×466mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+4000D+Airflow' },
+  { id:'c-4000x',      name:'4000X RGB',              brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'453×230×466mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+4000X+RGB' },
+  { id:'c-7000d',      name:'7000D Airflow',          brand:'Corsair',       forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Full Tower',  dims:'627×265×597mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+7000D+Airflow' },
+  { id:'c-680x',       name:'680X RGB',               brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'487×232×494mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+680X+RGB' },
+  { id:'c-3000d',      name:'3000D Airflow',          brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'453×230×466mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+3000D+Airflow' },
+  { id:'c-2000d',      name:'2000D Airflow (mITX)',   brand:'Corsair',       forms:['mitx'],                     maxGpu:340, type:'Mini-ITX',   dims:'323×170×271mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+2000D+Airflow' },
+  { id:'c-4000d-rgb',  name:'4000D RGB Airflow',      brand:'Corsair',       forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'453×230×466mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Corsair+4000D+RGB+Airflow' },
+
+  // ── NZXT ─────────────────────────────────────────────────────────────────
+  { id:'n-h9',         name:'H9 Flow',                brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:435, type:'Mid Tower',   dims:'494×232×490mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H9+Flow' },
+  { id:'n-h7flow',     name:'H7 Flow',                brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:400, type:'Mid Tower',   dims:'475×232×480mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H7+Flow' },
+  { id:'n-h7elite',    name:'H7 Elite',               brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:400, type:'Mid Tower',   dims:'475×232×480mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H7+Elite' },
+  { id:'n-h6flow',     name:'H6 Flow',                brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:400, type:'Mid Tower',   dims:'435×212×464mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H6+Flow' },
+  { id:'n-h5flow',     name:'H5 Flow',                brand:'NZXT',          forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'395×210×430mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H5+Flow' },
+  { id:'n-h510flow',   name:'H510 Flow',              brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'460×210×428mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H510+Flow' },
+  { id:'n-h710i',      name:'H710i',                  brand:'NZXT',          forms:['atx','matx','mitx'],        maxGpu:414, type:'Full Tower',  dims:'494×230×516mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H710i' },
+  { id:'n-h1',         name:'H1 (Mini-ITX)',          brand:'NZXT',          forms:['mitx'],                     maxGpu:305, type:'Mini-ITX',   dims:'420×200×200mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H1+Mini+ITX' },
+  { id:'n-h2',         name:'H2 (Mini-ITX)',          brand:'NZXT',          forms:['mitx'],                     maxGpu:325, type:'Mini-ITX',   dims:'400×180×382mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=NZXT+H2+Mini+ITX' },
+
+  // ── LIAN LI ───────────────────────────────────────────────────────────────
+  { id:'ll-o11d',      name:'PC-O11 Dynamic EVO',     brand:'Lian Li',       forms:['eatx','atx','matx','mitx'], maxGpu:422, type:'Mid Tower',   dims:'459×272×470mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+O11+Dynamic+EVO' },
+  { id:'ll-o11dxl',    name:'PC-O11 Dynamic XL',      brand:'Lian Li',       forms:['eatx','atx','matx','mitx'], maxGpu:446, type:'Full Tower',  dims:'513×272×502mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+O11+Dynamic+XL' },
+  { id:'ll-o11air',    name:'PC-O11 Air Mini',        brand:'Lian Li',       forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'395×230×380mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+O11+Air+Mini' },
+  { id:'ll-lancool3',  name:'Lancool III',             brand:'Lian Li',       forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Mid Tower',   dims:'498×239×474mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+Lancool+III' },
+  { id:'ll-lancool2m', name:'Lancool 216',            brand:'Lian Li',       forms:['atx','matx','mitx'],        maxGpu:435, type:'Mid Tower',   dims:'460×219×470mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+Lancool+216' },
+  { id:'ll-lancool215',name:'Lancool 215',            brand:'Lian Li',       forms:['atx','matx','mitx'],        maxGpu:370, type:'Mid Tower',   dims:'415×210×450mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+Lancool+215' },
+  { id:'ll-tu150',     name:'TU150 (Mini-ITX)',       brand:'Lian Li',       forms:['mitx'],                     maxGpu:320, type:'Mini-ITX',   dims:'290×228×381mm', color:'Black/Silver', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+TU150' },
+  { id:'ll-q58',       name:'Q58 (Mini-ITX)',         brand:'Lian Li',       forms:['mitx'],                     maxGpu:320, type:'Mini-ITX',   dims:'279×155×280mm', color:'Black/Silver', amazonUrl:'https://www.amazon.co.uk/s?k=Lian+Li+Q58' },
+
+  // ── MSI ───────────────────────────────────────────────────────────────────
+  { id:'msi-mag321',   name:'MAG FORGE 321R Airflow', brand:'MSI',           forms:['atx','matx','mitx'],        maxGpu:400, type:'Mid Tower',   dims:'487×212×465mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MAG+FORGE+321R' },
+  { id:'msi-mag111',   name:'MAG FORGE 111R',         brand:'MSI',           forms:['matx','mitx'],              maxGpu:350, type:'mATX Tower',  dims:'388×203×430mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MAG+FORGE+111R' },
+  { id:'msi-mpg',      name:'MPG Gungnir 300R',       brand:'MSI',           forms:['atx','matx','mitx'],        maxGpu:380, type:'Mid Tower',   dims:'480×215×450mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MPG+Gungnir+300R' },
+  { id:'msi-mpg110',   name:'MPG Gungnir 110R',       brand:'MSI',           forms:['matx','mitx'],              maxGpu:370, type:'mATX Tower',  dims:'398×210×440mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MPG+Gungnir+110R' },
+  { id:'msi-pano100',  name:'MAG PANO 100L PZ',       brand:'MSI',           forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'400×210×430mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MAG+PANO+100L' },
+  { id:'msi-aegis',    name:'MEG Prospect 700R',      brand:'MSI',           forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Full Tower',  dims:'570×240×530mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=MSI+MEG+Prospect+700R' },
+
+  // ── FRACTAL DESIGN ────────────────────────────────────────────────────────
+  { id:'fd-torrent',   name:'Torrent',                brand:'Fractal Design', forms:['eatx','atx','matx','mitx'], maxGpu:461, type:'Mid Tower',   dims:'530×243×466mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Torrent' },
+  { id:'fd-torrentn',  name:'Torrent Nano (mITX)',    brand:'Fractal Design', forms:['mitx'],                     maxGpu:335, type:'Mini-ITX',   dims:'329×175×350mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Torrent+Nano' },
+  { id:'fd-meshify2',  name:'Meshify 2',              brand:'Fractal Design', forms:['atx','matx','mitx'],        maxGpu:420, type:'Mid Tower',   dims:'475×232×464mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Meshify+2' },
+  { id:'fd-meshify2xl',name:'Meshify 2 XL',           brand:'Fractal Design', forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Full Tower',  dims:'555×240×544mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Meshify+2+XL' },
+  { id:'fd-meshifycm', name:'Meshify C Mini (mATX)',  brand:'Fractal Design', forms:['matx','mitx'],              maxGpu:315, type:'mATX Tower',  dims:'395×217×395mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Meshify+C+Mini' },
+  { id:'fd-define7',   name:'Define 7',               brand:'Fractal Design', forms:['atx','matx','mitx'],        maxGpu:440, type:'Mid Tower',   dims:'543×240×475mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Define+7' },
+  { id:'fd-define7xl', name:'Define 7 XL',            brand:'Fractal Design', forms:['eatx','atx','matx','mitx'], maxGpu:440, type:'Full Tower',  dims:'600×240×546mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Define+7+XL' },
+  { id:'fd-north',     name:'North',                  brand:'Fractal Design', forms:['atx','matx','mitx'],        maxGpu:355, type:'Mid Tower',   dims:'467×240×454mm', color:'Chalk/Charcoal', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+North' },
+  { id:'fd-pop',       name:'Pop Air',                brand:'Fractal Design', forms:['atx','matx','mitx'],        maxGpu:360, type:'Mid Tower',   dims:'463×220×463mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Pop+Air' },
+  { id:'fd-popxl',     name:'Pop XL Air',             brand:'Fractal Design', forms:['eatx','atx','matx','mitx'], maxGpu:460, type:'Full Tower',  dims:'566×237×549mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Pop+XL+Air' },
+  { id:'fd-era',       name:'Era ITX (Mini-ITX)',     brand:'Fractal Design', forms:['mitx'],                     maxGpu:315, type:'Mini-ITX',   dims:'325×172×265mm', color:'Silver/Black', amazonUrl:'https://www.amazon.co.uk/s?k=Fractal+Design+Era+ITX' },
+
+  // ── BE QUIET! ─────────────────────────────────────────────────────────────
+  { id:'bq-500dx',     name:'Pure Base 500DX',        brand:'be quiet!',     forms:['atx','matx','mitx'],        maxGpu:369, type:'Mid Tower',   dims:'463×232×450mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=be+quiet+Pure+Base+500DX' },
+  { id:'bq-500fl',     name:'Pure Base 500FX',        brand:'be quiet!',     forms:['atx','matx','mitx'],        maxGpu:430, type:'Mid Tower',   dims:'485×232×460mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=be+quiet+Pure+Base+500FX' },
+  { id:'bq-600',       name:'Pure Base 600',          brand:'be quiet!',     forms:['atx','matx','mitx'],        maxGpu:410, type:'Mid Tower',   dims:'494×230×450mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=be+quiet+Pure+Base+600' },
+  { id:'bq-silent4',   name:'Silent Base 802',        brand:'be quiet!',     forms:['eatx','atx','matx','mitx'], maxGpu:426, type:'Mid Tower',   dims:'543×253×510mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=be+quiet+Silent+Base+802' },
+  { id:'bq-dark',      name:'Dark Base Pro 901',      brand:'be quiet!',     forms:['eatx','atx','matx','mitx'], maxGpu:504, type:'Full Tower',  dims:'586×265×597mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=be+quiet+Dark+Base+Pro+901' },
+
+  // ── COOLER MASTER ─────────────────────────────────────────────────────────
+  { id:'cm-nr200p',    name:'NR200P (Mini-ITX)',      brand:'Cooler Master',  forms:['mitx'],                     maxGpu:330, type:'Mini-ITX',   dims:'376×185×292mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+NR200P' },
+  { id:'cm-nr200',     name:'NR200 (Mini-ITX)',       brand:'Cooler Master',  forms:['mitx'],                     maxGpu:330, type:'Mini-ITX',   dims:'376×185×274mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+NR200' },
+  { id:'cm-nr600',     name:'NR600',                  brand:'Cooler Master',  forms:['atx','matx','mitx'],        maxGpu:410, type:'Mid Tower',   dims:'496×210×463mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+NR600' },
+  { id:'cm-nr400',     name:'NR400 (mATX)',           brand:'Cooler Master',  forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'389×200×425mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+NR400' },
+  { id:'cm-td500',     name:'TD500 Mesh V2',          brand:'Cooler Master',  forms:['atx','matx','mitx'],        maxGpu:410, type:'Mid Tower',   dims:'493×215×469mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+TD500+Mesh' },
+  { id:'cm-haf700',    name:'HAF 700 Evo',            brand:'Cooler Master',  forms:['eatx','atx','matx','mitx'], maxGpu:490, type:'Full Tower',  dims:'638×290×648mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+HAF+700+Evo' },
+  { id:'cm-q300l',     name:'Q300L (mATX)',           brand:'Cooler Master',  forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'387×200×381mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Cooler+Master+Q300L' },
+
+  // ── PHANTEKS ──────────────────────────────────────────────────────────────
+  { id:'ph-p600s',     name:'Enthoo Pro 2',           brand:'Phanteks',       forms:['eatx','atx','matx','mitx'], maxGpu:503, type:'Full Tower',  dims:'560×240×555mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Phanteks+Enthoo+Pro+2' },
+  { id:'ph-p400a',     name:'Eclipse P400A',          brand:'Phanteks',       forms:['atx','matx','mitx'],        maxGpu:420, type:'Mid Tower',   dims:'465×210×465mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Phanteks+Eclipse+P400A' },
+  { id:'ph-g360a',     name:'Eclipse G360A',          brand:'Phanteks',       forms:['matx','mitx'],              maxGpu:420, type:'mATX Tower',  dims:'400×216×430mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Phanteks+Eclipse+G360A' },
+  { id:'ph-nxtl',      name:'NXT240 (mATX)',          brand:'Phanteks',       forms:['matx','mitx'],              maxGpu:400, type:'mATX Tower',  dims:'380×210×400mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Phanteks+NXT240' },
+  { id:'ph-shift2',    name:'Evolv Shift 2 Air (ITX)', brand:'Phanteks',      forms:['mitx'],                     maxGpu:335, type:'Mini-ITX',   dims:'395×160×295mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Phanteks+Evolv+Shift+2+Air' },
+
+  // ── THERMALTAKE ───────────────────────────────────────────────────────────
+  { id:'tt-view71',    name:'View 71 TG',             brand:'Thermaltake',    forms:['eatx','atx','matx','mitx'], maxGpu:410, type:'Full Tower',  dims:'560×235×575mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=Thermaltake+View+71' },
+  { id:'tt-h550',      name:'H550 TG',                brand:'Thermaltake',    forms:['atx','matx','mitx'],        maxGpu:410, type:'Mid Tower',   dims:'490×220×470mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Thermaltake+H550' },
+  { id:'tt-h350',      name:'H350 TG (mATX)',         brand:'Thermaltake',    forms:['matx','mitx'],              maxGpu:360, type:'mATX Tower',  dims:'395×205×435mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Thermaltake+H350+mATX' },
+  { id:'tt-the-tower', name:'The Tower 900',          brand:'Thermaltake',    forms:['eatx','atx','matx','mitx'], maxGpu:450, type:'Full Tower',  dims:'600×280×610mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Thermaltake+Tower+900' },
+  { id:'tt-s100',      name:'S100 TG (Mini-ITX)',     brand:'Thermaltake',    forms:['mitx'],                     maxGpu:250, type:'Mini-ITX',   dims:'330×177×350mm', color:'Black/Snow',  amazonUrl:'https://www.amazon.co.uk/s?k=Thermaltake+S100+ITX' },
+
+  // ── ASUS ROG ──────────────────────────────────────────────────────────────
+  { id:'rog-helios',   name:'Strix Helios',           brand:'ASUS ROG',       forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Full Tower',  dims:'612×243×580mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=ASUS+ROG+Strix+Helios' },
+  { id:'rog-gr701',    name:'GR701 EATX',             brand:'ASUS ROG',       forms:['eatx','atx','matx','mitx'], maxGpu:400, type:'Full Tower',  dims:'600×235×580mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=ASUS+ROG+GR701' },
+  { id:'rog-z11',      name:'Z11 (mITX/mATX)',        brand:'ASUS ROG',       forms:['matx','mitx'],              maxGpu:348, type:'mATX Tower',  dims:'422×264×351mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=ASUS+ROG+Z11' },
+
+  // ── DEEPCOOL ──────────────────────────────────────────────────────────────
+  { id:'dc-ch560',     name:'CH560',                  brand:'DeepCool',       forms:['eatx','atx','matx','mitx'], maxGpu:400, type:'Mid Tower',   dims:'500×230×480mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=DeepCool+CH560' },
+  { id:'dc-ch510',     name:'CH510',                  brand:'DeepCool',       forms:['atx','matx','mitx'],        maxGpu:380, type:'Mid Tower',   dims:'460×210×460mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=DeepCool+CH510' },
+  { id:'dc-matrexx40', name:'MATREXX 40 (mATX)',      brand:'DeepCool',       forms:['matx','mitx'],              maxGpu:320, type:'mATX Tower',  dims:'375×195×385mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=DeepCool+MATREXX+40' },
+  { id:'dc-cc560',     name:'CC560',                  brand:'DeepCool',       forms:['atx','matx','mitx'],        maxGpu:370, type:'Mid Tower',   dims:'459×210×459mm', color:'Black/White', amazonUrl:'https://www.amazon.co.uk/s?k=DeepCool+CC560' },
+
+  // ── SILVERSTONE ───────────────────────────────────────────────────────────
+  { id:'ss-rm600',     name:'RM600 (mATX)',           brand:'Silverstone',    forms:['matx','mitx'],              maxGpu:380, type:'mATX Tower',  dims:'395×200×420mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Silverstone+RM600' },
+  { id:'ss-sg13',      name:'SG13 (Mini-ITX)',        brand:'Silverstone',    forms:['mitx'],                     maxGpu:270, type:'Mini-ITX',   dims:'250×128×210mm', color:'Black/Silver', amazonUrl:'https://www.amazon.co.uk/s?k=Silverstone+SG13' },
+  { id:'ss-fara',      name:'FARA R1 Pro',            brand:'Silverstone',    forms:['atx','matx','mitx'],        maxGpu:390, type:'Mid Tower',   dims:'480×210×463mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Silverstone+FARA+R1+Pro' },
+
+  // ── ANTEC ─────────────────────────────────────────────────────────────────
+  { id:'an-p120',      name:'P120 Crystal',           brand:'Antec',          forms:['eatx','atx','matx','mitx'], maxGpu:420, type:'Full Tower',  dims:'545×225×530mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Antec+P120+Crystal' },
+  { id:'an-df700',     name:'DF700 Flux',             brand:'Antec',          forms:['atx','matx','mitx'],        maxGpu:400, type:'Mid Tower',   dims:'487×211×461mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Antec+DF700+Flux' },
+  { id:'an-nx800',     name:'NX800',                  brand:'Antec',          forms:['atx','matx','mitx'],        maxGpu:420, type:'Mid Tower',   dims:'490×210×460mm', color:'Black',       amazonUrl:'https://www.amazon.co.uk/s?k=Antec+NX800' },
+];
+
+// ─── COMPATIBILITY ────────────────────────────────────────────────────────────
+
+function checkGpuMbCompat(gpu, mb) {
+  // PCIe backward compatible - GPU gen 5 works in gen 4 slot and vice versa
+  // Only flag if GPU is PCIe 5 and motherboard only supports 3
+  if (gpu.pcieGen === 5 && mb.pcieGen < 4) {
+    return { ok: false, reason: `This GPU uses PCIe ${gpu.pcieGen} but the ${mb.chipset} only supports up to PCIe ${mb.pcieGen}. The card may work at reduced bandwidth or not at all.` };
+  }
+  // All modern GPUs use PCIe which is backward compatible — no socket issues
+  return { ok: true };
+}
+
+function getCompatibleCases(gpu, mb) {
+  return CASES.filter(c => {
+    const formOk = c.forms.includes(mb.form);
+    const gpuOk = c.maxGpu >= gpu.length;
+    return formOk && gpuOk;
+  });
+}
+
+// ─── UI ───────────────────────────────────────────────────────────────────────
+
+const gpuSelect = document.getElementById('gpu-select');
+const mbSelect = document.getElementById('mb-select');
+const statusBar = document.getElementById('status-bar');
+const results = document.getElementById('results');
+
+// Populate GPU list grouped by brand
+const gpuGroups = {};
+GPUS.forEach(g => {
+  if (!gpuGroups[g.brand]) gpuGroups[g.brand] = [];
+  gpuGroups[g.brand].push(g);
+});
+['NVIDIA','AMD','Intel'].forEach(brand => {
+  if (!gpuGroups[brand]) return;
+  const og = document.createElement('optgroup');
+  og.label = brand;
+  gpuGroups[brand].forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.name + ` (${g.length}mm)`;
+    og.appendChild(opt);
+  });
+  gpuSelect.appendChild(og);
+});
+
+// Populate MB list grouped by socket
+const mbGroups = {};
+MOTHERBOARDS.forEach(m => {
+  if (!mbGroups[m.socket]) mbGroups[m.socket] = [];
+  mbGroups[m.socket].push(m);
+});
+['AM5','AM4','LGA1851','LGA1700','LGA1200'].forEach(socket => {
+  if (!mbGroups[socket]) return;
+  const og = document.createElement('optgroup');
+  og.label = socket;
+  mbGroups[socket].forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name;
+    og.appendChild(opt);
+  });
+  mbSelect.appendChild(og);
+});
+
+const formLabels = { atx:'ATX', matx:'Micro-ATX', mitx:'Mini-ITX', eatx:'E-ATX', dtx:'DTX' };
+
+function update() {
+  const gpu = GPUS.find(g => g.id === gpuSelect.value);
+  const mb = MOTHERBOARDS.find(m => m.id === mbSelect.value);
+
+  if (!gpu || !mb) {
+    statusBar.style.display = 'none';
+    results.innerHTML = `<div class="empty-state"><div class="big-icon">🖥️</div><h3>Select Your Components</h3><p>Choose a GPU and motherboard above to find compatible cases.<br>We'll check compatibility and show you the best fits.</p></div>`;
+    return;
+  }
+
+  const compat = checkGpuMbCompat(gpu, mb);
+  statusBar.style.display = 'block';
+
+  if (!compat.ok) {
+    statusBar.innerHTML = `<div class="status-badge incompatible"><span class="status-icon">⚠️</span><span><strong>Incompatible:</strong> ${compat.reason}</span></div>`;
+    results.innerHTML = `<div class="empty-state"><div class="big-icon">❌</div><h3>Incompatible Combination</h3><p>${compat.reason}</p></div>`;
+    return;
+  }
+
+  const compatCases = getCompatibleCases(gpu, mb);
+  statusBar.innerHTML = `<div class="status-badge compatible"><span class="status-icon">✅</span><span><strong>Compatible!</strong> ${gpu.name} + ${mb.name} (${formLabels[mb.form]}) — showing ${compatCases.length} matching cases</span></div>`;
+
+  if (compatCases.length === 0) {
+    results.innerHTML = `<div class="empty-state"><div class="big-icon">😔</div><h3>No Cases Found</h3><p>No cases in our database fit this combination. Consider a larger GPU or more compact board.</p></div>`;
+    return;
+  }
+
+  // Sort: priority brands first, then by GPU clearance tightness
+  const sorted = [...compatCases].sort((a, b) => {
+    const aPri = BRAND_PRIORITY.indexOf(a.brand);
+    const bPri = BRAND_PRIORITY.indexOf(b.brand);
+    const aOrder = aPri === -1 ? 99 : aPri;
+    const bOrder = bPri === -1 ? 99 : bPri;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.maxGpu - gpu.length) - (b.maxGpu - gpu.length);
+  });
+
+  const shown = sorted.slice(0, 12);
+  const isPriority = (brand) => BRAND_PRIORITY.indexOf(brand) <= 4; // top 5 brands
+
+  results.innerHTML = `
+    <div class="results-header">
+      <span class="results-title">Compatible Cases</span>
+      <span class="results-count">${shown.length} of ${compatCases.length} shown</span>
+    </div>
+    <div class="case-grid">
+      ${shown.map(c => {
+        const clearance = c.maxGpu - gpu.length;
+        const clearLabel = clearance <= 20 ? '🔴 Tight fit' : clearance <= 50 ? '🟡 Good fit' : '🟢 Plenty of room';
+        return `<div class="case-card">
+          <div class="case-img">🖥️</div>
+          <div class="case-body">
+            ${isPriority(c.brand) ? `<div class="priority-badge">⭐ Featured Brand</div>` : ''}
+            <div class="case-brand">${c.brand}</div>
+            <div class="case-name">${c.name}</div>
+            <div class="case-tags">
+              <span class="tag tag-type">${c.type}</span>
+              <span class="tag tag-form">${c.forms.map(f=>formLabels[f]).join(' / ')}</span>
+              <span class="tag tag-gpu">${clearLabel}</span>
+            </div>
+            <div class="case-specs">
+              <div class="spec-item"><span class="spec-label">Max GPU</span><span class="spec-val">${c.maxGpu}mm</span></div>
+              <div class="spec-item"><span class="spec-label">GPU Clearance</span><span class="spec-val">+${clearance}mm</span></div>
+              <div class="spec-item"><span class="spec-label">Dimensions</span><span class="spec-val">${c.dims}</span></div>
+              <div class="spec-item"><span class="spec-label">Colour</span><span class="spec-val">${c.color}</span></div>
+            </div>
+            <a class="amazon-btn" href="${c.amazonUrl}" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3.5 17.5C7.5 20.5 14 21.5 19.5 18.5" stroke="#111" stroke-width="2" stroke-linecap="round"/><path d="M17.5 16.5L19.5 18.5L17 20" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              View on Amazon
+            </a>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+gpuSelect.addEventListener('change', update);
+mbSelect.addEventListener('change', update);
+</script>
+</body>
+</html>
